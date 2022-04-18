@@ -65,6 +65,7 @@ func getBooks(c *gin.Context){
 }
 
 func getBookById(id string)(*book, error){
+
 	for i, b := range books {
 		if b.ID == id{
 			return &books[i], nil
@@ -139,13 +140,36 @@ func returnBook(c *gin.Context){
 	c.IndentedJSON(http.StatusOK, book)
 }
 
+func deleteBook(c *gin.Context){
+	id := c.Params.ByName("id")
+
+	if err := Session.Query("delete from books where id=?", id).Exec(); err != nil {
+		fmt.Println("Error while delete new book.")
+		fmt.Println(err)
+		return
+	}
+	j := 0
+	for i, b := range books {
+		if b.ID == id{
+			j = i
+			break;
+		}
+	}
+	books[j] = books[len(books)-1]
+	books = books[:len(books)-1]
+
+	c.IndentedJSON(http.StatusOK, gin.H{"message":"Delete operation succesfully executed."})
+
+}
+
 func main(){
 	booksArr()
 	router := gin.Default()
 	router.GET("/books", getBooks)
 	router.GET("/books/:id", bookById)
 	router.POST("/books", createBook)
-	router.PATCH("/checkout", checkoutBook)
-	router.PATCH("/return", returnBook)
+	router.PATCH("/checkout", checkoutBook) //use query parameter
+	router.PATCH("/return", returnBook) //use query parameter
+	router.DELETE("/delete/:id", deleteBook)
 	router.Run("localhost:3000")
 }
